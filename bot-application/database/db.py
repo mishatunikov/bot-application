@@ -19,7 +19,6 @@ async def db_start():
                 "application TEXT,"
                 "message_id INTEGER,"
                 "time_message INTEGER)")
-
     cur.execute("CREATE TABLE IF NOT EXISTS active_applications ("
                 "message_id INTEGER PRIMARY KEY,"
                 "application TEXT,"
@@ -69,11 +68,10 @@ async def db_application(message: Message, state: FSMContext):
 
     if current_application[0]:
         cur.execute('UPDATE clients SET application = application || ? WHERE tg_id = ?',
-                    (f'{LEXICON[await state.get_state()][1]} {message.text}', message.from_user.id,))
+                    (f'{LEXICON[await state.get_state()][1]} <b><i>{message.text}</i></b>', message.from_user.id,))
     else:
         cur.execute('UPDATE clients SET application = ? WHERE tg_id = ?',
-                    (f'{LEXICON[await state.get_state()][1]} {message.text}', message.from_user.id,))
-
+                    (f'{LEXICON[await state.get_state()][1]} <b><i>{message.text}</i></b>', message.from_user.id,))
     db.commit()
 
 
@@ -100,10 +98,21 @@ async def application_processed(message_id: int):
 
 async def give_old_message(current_time):
     return cur.execute('SELECT tg_id, message_id FROM clients WHERE message_id is not NULL and '
-                       '? - time_message > 47 * 3600', (current_time,)).fetchall()
+                       '? - time_message > 10', (current_time,)).fetchall()
 
 
 async def clear_old_message(message_id: int):
     cur.execute('UPDATE clients SET message_id = NULL, time_message = NULL, application = NULL '
                 'WHERE message_id = ?', (message_id,))
+    db.commit()
+
+
+async def give_old_application(current_time):
+    return cur.execute('SELECT message_id, time_message, application FROM active_applications '
+                       'WHERE ? - time_message > 10', (current_time,)).fetchall()
+
+
+async def refresh_application(message_id: int, time_message: int, old_message_id: int):
+    cur.execute('UPDATE active_applications SET message_id = ?, time_message = ? '
+                'WHERE message_id = ?', (message_id, time_message, old_message_id,))
     db.commit()

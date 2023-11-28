@@ -3,7 +3,7 @@ from config_data.config import load_config
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from database.db import application_processed
-
+# 872711036
 router = Router()
 #
 router.message.filter(F.from_user.id == int(load_config().admin.id))

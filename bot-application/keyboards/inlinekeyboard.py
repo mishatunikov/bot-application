@@ -3,7 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from lexicon.lexicon import KEYBOARDS
 
 
-async def inline_keyboards(text: str, user_id: int = None) -> InlineKeyboardMarkup:
+async def inline_keyboards(text: str) -> InlineKeyboardMarkup:
     ikb_builder = InlineKeyboardBuilder()
     # if user_id:
     #     ikb_builder.add(InlineKeyboardButton(text='Профиль клиента', url=f'tg://user?id={user_id}'))
@@ -20,5 +20,9 @@ async def process_confirm(text: str) -> InlineKeyboardMarkup:
     return ikb_builder.as_markup()
 
 
-in_kb = InlineKeyboardBuilder()
-in_kb.add(InlineKeyboardButton(text='here', url='tg://user?id=2141923788'))
+async def subscribe():
+    inb_builder = InlineKeyboardBuilder()
+    inb_builder.add(*[InlineKeyboardButton(text=i, url=j) for i, j in KEYBOARDS['not_sub'].items()])
+    return inb_builder.as_markup()
+# in_kb = InlineKeyboardBuilder()
+# in_kb.add(InlineKeyboardButton(text='here', url='tg://user?id=2141923788'))

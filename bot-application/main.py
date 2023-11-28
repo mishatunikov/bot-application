@@ -6,6 +6,7 @@ from handlers import user_handlers, admin_handlers
 from database import db
 from fsm.fsm import storage
 from service.service import delete_old_messages
+from middlewares.check_sub import CheckSubscription
 
 import logging
 logger = logging.getLogger()
@@ -20,11 +21,10 @@ async def main() -> None:
                '[%(asctime)s] - %(name)s - %(message)s')
     logger.info('Starting Bot')
     dp = Dispatcher(storage=storage)
-
     config: Config = load_config()
     bot = Bot(token=config.bot.token, parse_mode='html')
     await set_main_menu(bot)
-
+    dp.message.middleware(CheckSubscription())
     dp.include_router(admin_handlers.router)
     dp.include_router(user_handlers.router)
 

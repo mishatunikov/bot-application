@@ -34,10 +34,9 @@ async def start_help(message: Message):
 @router.message(F.text.in_(['Покупка ООО', 'Продажа ООО']))
 async def buying(message: Message, state: FSMContext):
     await start_fsm(state, message.text)
-    # await state.set_state(FSMApplicationBuy.buy_firm)
     await message.bot.delete_message(message.chat.id, await give_message(message.from_user.id))
     await message.delete()
-    send_message = await message.answer(text=LEXICON[await state.get_state()],
+    send_message = await message.answer(text=LEXICON[await state.get_state()][0],
                                         reply_markup=await inline_keyboards('application'))
     await add_message(message.from_user.id, send_message.message_id, send_message.date)
 
@@ -50,8 +49,7 @@ async def create_application(callback: CallbackQuery, state: FSMContext):
     await add_message(callback.from_user.id, send_message.message_id)
     await send_message
     s = await state.get_state()
-    # await state.set_state(FSMApplicationBuy.ask_region)
-    # await clear_application(callback.from_user.id)
+
 
 
 # Обработка возвращения в главное меню
@@ -65,16 +63,17 @@ async def back_main_menu(callback: CallbackQuery, state: FSMContext):
 
 
 # Завершение заявки
+# ИСПРАВИТЬ ввод данных во время этого
 @router.message(StateFilter(FSMApplicationBuy.ask_system, FSMApplicationSell.ask_cost))
 async def check_application(message: Message, state: FSMContext):
     await db_application(message, state)
     await give_next_state(state)
     await message.bot.delete_message(message.chat.id, await give_message(message.from_user.id))
     await message.delete()
-    send_message = await message.answer(text=f'<b>Ваша заявка:</b>\n\n{await give_application(message.from_user.id)}',
+    send_message = await message.answer(text=f'<b>Ваша заявка 📝:</b>\n\n{await give_application(message.from_user.id)}',
                                         reply_markup=await process_confirm(message.text))
     await add_message(message.from_user.id, send_message.message_id, send_message.date)
-    print(await give_application(message.from_user.id))
+
 
 
 @router.message(~StateFilter(default_state, FSMApplicationBuy.buy_firm, FSMApplicationSell.sell_firm))
@@ -90,12 +89,11 @@ async def write_application(message: Message, state: FSMContext):
 # отмена заявки
 @router.callback_query(F.data == 'cancel_application')
 async def cancel_application(callback: CallbackQuery, state: FSMContext):
-    send_message = await callback.message.edit_text(text=LEXICON[await state.get_state()],
+    send_message = await callback.message.edit_text(text=LEXICON[await state.get_state()][0],
                                                     reply_markup=await inline_keyboards('application'))
     await add_message(callback.from_user.id, send_message.message_id, send_message.date)
     await clear_application(callback.from_user.id)
     await start_fsm(state)
-
 
 
 # await message.answer(text=f"<b><a href='tg://user?id={2141923788}'>Связаться</a></b>")
@@ -106,9 +104,9 @@ async def confirm_application(callback: CallbackQuery, state: FSMContext):
                                                     reply_markup=await inline_keyboards('application'))
     await add_message(callback.from_user.id, send_message.message_id)
     send_message = await callback.bot.send_message(config.admin.id, text=await for_admin(callback.bot,
-                                                                                         callback.from_user.id),
-                                                   reply_markup=await inline_keyboards('confirm_application',
-                                                                                       callback.from_user.id))
+                                                                                         callback.from_user.id,
+                                                                                         await state.get_state()),
+                                                   reply_markup=await inline_keyboards('confirm_application'))
     await insert_application(send_message.message_id, send_message.text, send_message.date)
     await clear_application(callback.from_user.id)
 
@@ -116,5 +114,4 @@ async def confirm_application(callback: CallbackQuery, state: FSMContext):
 # удаление любого сообщения от пользователя
 @router.message()
 async def del_any_message(message: Message):
-    await message.answer(text=str(message.chat.id))
     await message.delete()
